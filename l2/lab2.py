@@ -36,29 +36,29 @@ def simplex_method(c, A, b, B):
     AB = A[:, B]
     A_inv = np.linalg.inv(AB)
     x[B] = np.linalg.solve(AB, b)
-    
+
     while True:
         AB = A[:, B]
         cB = c[B]
-        u = cB @ A_inv
-        delta = u @ A - c
+        u = cB @ A_inv  # вектор потенциалов
+        delta = u @ A - c  # вектор оценок 
         
         if np.all(delta >= 0):
-            return x  # Найден оптимальный план
+            return x, B
         
-        j0 = np.where(delta < 0)[0][0]  # Индекс первой отрицательной переменной
-        z = A_inv @ A[:, j0]
+        j0 = np.where(delta < 0)[0][0] 
+        z = A_inv @ A[:, j0]  # направление изменений
         
         theta = np.full(m, np.inf)
-        valid_indices = z > 0   # возвращает вектор с True/False
+        valid_indices = z > 0
         theta[valid_indices] = x[B][valid_indices] / z[valid_indices]
         
         if np.all(theta == np.inf):
             return "Целевой функционал задачи не ограничен сверху на множестве допустимых планов."
         
         k = np.argmin(theta)
-        j_star = B[k]
-        B[k] = j0  # Обновляем базис
+        j_star = B[k]   # Обновляем базис, убирая из базиса переменную, которая первой достигнет ограничения
+        B[k] = j0  
 
         success, A_inv = is_invertible_and_inverse(A_inv, A[:, j0], k)
         if not success:

@@ -18,40 +18,32 @@ def initial_simplex_phase(c, A, b):
     x_opt, B_opt = simplex_method(c_tilde, A_tilde, b, B)
     # print(x_opt, B_opt)
     
-    # проверяем на наличие искуственных переменных
     if any(x_opt[n:] != 0):
         return "Задача несовместна"
     
     x = x_opt[:n]  # допустимый план задачи
-    B = [j for j in B_opt if j < n]  # Исключаем искусственные переменные
 
     # Шаг 7-9: Замена искусственных переменных
-    while any(j >= n for j in B):
-        for k in range(len(B)):
+    while any(j >= n for j in B_opt):
+        for k in range(len(B_opt)):
             if B[k] >= n:  # Найдена искусственная переменная
                 for j in range(n):
-                    if j not in B:
-                        l_j = np.linalg.solve(A_tilde[:, B], A_tilde[:, j])
+                    if j not in B_opt:
+                        l_j = np.linalg.solve(A_tilde[:, B_opt], A_tilde[:, j])
                         if l_j[k] != 0:
-                            B[k] = j  # Заменяем искусственную переменную
+                            B_opt[k] = j 
                             break
-                else:
-                    # Искусственную переменную заменить не удалось → удаляем строку
-                    A_tilde = np.delete(A_tilde, k, axis=0)
-                    b = np.delete(b, k)
-                    B.pop(k)
-                    break
+                    else:
+                        # Искусственную переменную заменить не удалось → удаляем строку
+                        A = np.delete(A, k, axis=0)
+                        b = np.delete(b, k)
+                        B_opt.pop(k)
+                        break
                 
-    return x, B
+    return x, B_opt, A, b
 
 
 c = np.array([1, 0, 0])
 A = np.array([[1, 1, 1], [2, 2, 2]])
 b = np.array([0, 0])
 print(initial_simplex_phase(c, A, b))
-
-
-c2 = np.array([3, 2])
-A2 = np.array([[1, 2], [3, 1]])
-b2 = np.array([4, 5])
-print(initial_simplex_phase(c2, A2, b2))

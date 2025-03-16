@@ -1,6 +1,6 @@
 import numpy as np
 
-def dual_simplex(c, A, b, B, tol=1e-8, max_iter=100):
+def dual_simplex(c, A, b, B, max_iter=100):
     """
     Функция dual_simplex решает задачу линейного программирования методом двойственного симплекса.
     
@@ -9,7 +9,6 @@ def dual_simplex(c, A, b, B, tol=1e-8, max_iter=100):
     - A: матрица ограничений (numpy массив формы (m, n))
     - b: вектор правых частей ограничений (numpy массив формы (m,))
     - B: список базисных индексов (индексация с 0, например, [3, 4] для j4 и j5 из текста)
-    - tol: допустимая погрешность для проверки неотрицательности (по умолчанию 1e-8)
     - max_iter: максимальное число итераций, чтобы избежать бесконечного цикла
 
     Возвращает:
@@ -18,50 +17,50 @@ def dual_simplex(c, A, b, B, tol=1e-8, max_iter=100):
     """
     n = len(c)     
     m = A.shape[0]  
-    
-    iter_count = 0
 
     for iter_count in range(max_iter):
         A_B = A[:, B]
         try:
+            # инвертируем матрицу
             A_B_inv = np.linalg.inv(A_B)
         except np.linalg.LinAlgError:
             return "Метод не может быть применён."
         
         c_B = c[B]
         
-        # Шаг 3. Вычисляем базисный допустимый план двойственной задачи: y^T = c_B^T * A_B_inv.
+        # Базисный допустимый план двойственной задачи
         y = A_B_inv.T @ c_B  
         
-        # Шаг 4. Вычисляем псевдоплан для прямой задачи.
-        kappa_B = A_B_inv @ b
-        kappa = np.zeros(n)
+        # Псевдоплан
+        k_B = A_B_inv @ b
+        k = np.zeros(n)
         for idx, basis_index in enumerate(B):
-            kappa[basis_index] = kappa_B[idx]
+            k[basis_index] = k_B[idx]
         
-        # Если все компоненты псевдоплана неотрицательны, мы нашли оптимальное решение.
-        if np.all(kappa >= -tol):
-            return kappa
+        if np.all(k >= 0):
+            return k
         
-        # Шаг 6. Находим базисный индекс, где псевдоплан отрицательный.
+        # Находим первую отрицательную базисную переменную псевдоплана
         for idx, basis_index in enumerate(B):
-            if kappa[basis_index] < -tol:
+            if k[basis_index] < 0:
                 row_index = idx
                 break
         
         delta_y = A_B_inv[row_index, :]
         
+        # находим 
         mu = {}
         non_basis = [j for j in range(n) if j not in B]
         for j in non_basis:
             mu[j] = np.dot(delta_y, A[:, j])
         
-        if all(mu[j] >= -tol for j in non_basis):
+        if all(mu[j] >= 0 for j in non_basis):
             return "Задача не совместна (не существует допустимого плана)."
         
+        # вычисляем наименьшее отклонение переменной (чтобы изменения были минимальными)
         sigma = {}
         for j in non_basis:
-            if mu[j] < -tol:
+            if mu[j] < 0:
                 sigma[j] = (c[j] - np.dot(A[:, j], y)) / mu[j]
         
         j0 = min(sigma, key=sigma.get)
